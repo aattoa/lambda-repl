@@ -2,10 +2,17 @@ module ParserCombinators
 ( Position(..)
 , Input(..)
 , ParseError(..)
-, Parser
+, Parser(..)
+, mkInput
+, char
+, pred
+, string
 ) where
 
+import Prelude hiding (pred)
 import Control.Applicative (Alternative(..))
+import Data.Foldable (traverse_)
+import Text.Printf (printf)
 
 
 data Position = Position
@@ -61,3 +68,32 @@ instance Alternative Parser where
         (Left e1, Left e2) -> Left $ AlternativeError e1 e2
         (Left _, r) -> r
         (l, Left _) -> l
+
+
+mkInput :: String -> Input
+mkInput = flip Input $ Position 1 1
+
+advanceWith :: Position -> Char -> Position
+advanceWith (Position line column) = \case
+    '\n' -> Position (succ line) 1
+    _    -> Position line (succ column)
+
+summarizeRestOfInput :: String -> String
+summarizeRestOfInput = printf "'%s'" . take 10
+
+
+pred :: String -> (Char -> Bool) -> Parser Char
+pred description predicate = Parser \i ->
+    let errorFound = Left .
+                     ExpectationFailure (inputPosition i) .
+                     printf "Expected %s, but found %s" description
+    in case inputString i of
+    (c:cs) | predicate c -> Right (c, Input cs $ inputPosition i `advanceWith` c)
+           | otherwise   -> errorFound $ summarizeRestOfInput $ inputString i
+    []                   -> errorFound "the end of input"
+
+char :: Char -> Parser Char
+char c = pred ['\'', c, '\''] (==c)
+
+string :: String -> Parser String
+string s = s <$ traverse_ char s
