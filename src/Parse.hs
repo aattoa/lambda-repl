@@ -5,7 +5,7 @@ module Parse
 
 import Control.Applicative ((<|>), some, many)
 import Control.Monad (void)
-import Data.Char (isAlpha, isSpace)
+import Data.Char (isAlpha, isAlphaNum, isDigit, isSpace)
 import Data.List (foldl')
 import Text.Printf (printf)
 
@@ -13,8 +13,15 @@ import qualified ParserCombinators as PC
 import qualified Tree
 
 
+makeChurchNumeral :: Integer -> Tree.Expression
+makeChurchNumeral = Tree.Abstraction "f" . Tree.Abstraction "x" . helper
+    where helper 0 = Tree.Variable "x"
+          helper n = Tree.Application (Tree.Variable "f") (helper $ pred n)
+
 identifier :: PC.Parser String
-identifier = some $ PC.pred "an identifier" (\c -> isAlpha c || c `elem` "_'")
+identifier = (:)
+    <$> PC.pred "an identifier" isAlpha
+    <*> many (PC.pred "" (\c -> isAlphaNum c || c `elem` "_'"))
 
 ws :: PC.Parser ()
 ws = void $ many $ PC.pred "" isSpace
@@ -26,16 +33,19 @@ paren :: PC.Parser a -> PC.Parser a
 paren p = wsd (PC.char '(') *> p <* wsd (PC.char ')')
 
 abstraction :: PC.Parser Tree.Expression
-abstraction = Tree.Abstraction
-    <$> (PC.char '\\' *> identifier)
-    <*> (PC.char '.' *> expression)
+abstraction = flip (foldr Tree.Abstraction)
+    <$> (wsd (PC.char '\\') *> some (wsd identifier))
+    <*> (wsd (PC.char '.') *> expression)
 
 variable :: PC.Parser Tree.Expression
 variable = Tree.Variable <$> wsd identifier
 
+numeral :: PC.Parser Tree.Expression
+numeral = makeChurchNumeral . read <$> some (PC.pred "a digit" isDigit)
+
 expression :: PC.Parser Tree.Expression
 expression = foldl' Tree.Application <$> expr <*> many expr
-    where expr = variable <|> abstraction <|> paren expression
+    where expr = variable <|> abstraction <|> numeral <|> paren expression
 
 topLevel :: PC.Parser Tree.TopLevel
 topLevel = undefined
