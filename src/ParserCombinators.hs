@@ -65,9 +65,18 @@ instance Alternative Parser where
             if inputPosition i1 >= inputPosition i2
             then Right (x1, i1)
             else Right (x2, i2)
-        (Left e1, Left e2) -> Left $ AlternativeError e1 e2
+        (Left e1, Left e2) -> Left $ coalesceError e1 e2
         (Left _, r) -> r
         (l, Left _) -> l
+
+
+coalesceError :: ParseError -> ParseError -> ParseError
+coalesceError e1@(ExpectationFailure lpos _) e2@(ExpectationFailure rpos _) =
+    case compare lpos rpos of
+        LT -> e2
+        GT -> e1
+        EQ -> AlternativeError e1 e2
+coalesceError e1 e2 = AlternativeError e1 e2
 
 
 mkInput :: String -> Input
