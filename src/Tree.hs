@@ -1,8 +1,7 @@
 module Tree
 ( Expression(..)
 , TopLevel(..)
-, expressionToString
-, topLevelToString
+, showExpression
 ) where
 
 import Text.Printf (printf)
@@ -20,17 +19,10 @@ data TopLevel
     deriving (Show, Eq)
 
 
-expressionToString :: Expression -> String
-expressionToString = \case
+showExpression :: Expression -> String
+showExpression = \case
     Application invocable argument ->
-        printf "(%s %s)" (expressionToString invocable) (expressionToString argument)
+        printf "(%s %s)" (showExpression invocable) (showExpression argument)
     Abstraction parameter body ->
-        printf "\\%s.%s" parameter (expressionToString body)
+        printf "\\%s.%s" parameter (showExpression body)
     Variable name -> name
-
-topLevelToString :: TopLevel -> String
-topLevelToString = \case
-    ToplevelExpression expression ->
-        expressionToString expression
-    TopLevelDefinition name expression ->
-        printf "%s = %s" name (expressionToString expression)

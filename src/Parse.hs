@@ -47,8 +47,13 @@ expression :: PC.Parser Tree.Expression
 expression = foldl' Tree.Application <$> expr <*> many expr
     where expr = variable <|> abstraction <|> numeral <|> paren expression
 
+definition :: PC.Parser Tree.TopLevel
+definition = Tree.TopLevelDefinition
+    <$> (wsd identifier <* wsd (PC.char '='))
+    <*> expression
+
 topLevel :: PC.Parser Tree.TopLevel
-topLevel = undefined
+topLevel = definition <|> (Tree.ToplevelExpression <$> expression)
 
 parseErrorToString :: PC.ParseError -> String
 parseErrorToString = \case
