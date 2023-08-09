@@ -1,4 +1,4 @@
-module Tree
+module Syntax
 ( Expression(..)
 , TopLevel(..)
 , showExpression

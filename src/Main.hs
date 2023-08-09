@@ -5,11 +5,11 @@ import Data.List (intercalate)
 import System.IO (hFlush, stdout)
 import Text.Printf (printf)
 
-import qualified Tree
+import qualified Syntax
 import qualified Parse
 
 
-type Environment = [(String, Tree.Expression)]
+type Environment = [(String, Syntax.Expression)]
 
 data ReplState = ReplState
     { stateEnvironment :: Environment
@@ -35,15 +35,15 @@ readInput = do
     hFlush stdout
     fmap trim getLine
 
-showBinding :: (String, Tree.Expression) -> String
+showBinding :: (String, Syntax.Expression) -> String
 showBinding (name, expression) =
-    printf "%s = %s" name (Tree.showExpression expression)
+    printf "%s = %s" name (Syntax.showExpression expression)
 
 showEnvironment :: Environment -> String
 showEnvironment = intercalate "\n" . map showBinding
 
 showDefinitionOf :: Environment -> String -> String
-showDefinitionOf env name = maybe "Undefined" Tree.showExpression $ lookup name env
+showDefinitionOf env name = maybe "Undefined" Syntax.showExpression $ lookup name env
 
 runDirective :: ReplState -> String -> IO ()
 runDirective oldState directive =
@@ -64,10 +64,10 @@ repl state = readInput >>= \case
     string -> case Parse.parseTopLevel string of
         Left message -> putStrLn message >> repl state
         Right topLevel -> case topLevel of
-            Tree.TopLevelDefinition name expression ->
+            Syntax.TopLevelDefinition name expression ->
                 repl state { stateEnvironment = (name, expression) : stateEnvironment state }
-            Tree.ToplevelExpression expression ->
-                putStrLn (Tree.showExpression expression) >> repl state
+            Syntax.ToplevelExpression expression ->
+                putStrLn (Syntax.showExpression expression) >> repl state
 
 main :: IO ()
 main = do
