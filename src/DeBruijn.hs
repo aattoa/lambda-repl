@@ -34,12 +34,10 @@ showExpression = \case
     UnboundVariable name ->
         name
 
-
 makeParameterName :: Int -> String
-makeParameterName n = (names !! mod n count) : replicate (div n count) '\''
-    where names = ['a'..'z']
-          count = length names
-
+makeParameterName n = (names !! mod n count) : replicate (div n count) '\'' where
+    names = ['a' .. 'z']
+    count = length names
 
 fromSyntax :: Syntax.Expression -> Expression
 fromSyntax = impl [] where
@@ -52,7 +50,6 @@ fromSyntax = impl [] where
             case elemIndex name variables of
                 Just index -> BoundVariable (Index index)
                 Nothing    -> UnboundVariable name
-
 
 toSyntax :: Expression -> Syntax.Expression
 toSyntax = impl [] where
